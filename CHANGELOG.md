@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v1.3.8] - 2026-09-16
+
+### Removed
+- README 移除 hitrov/oci-arm-host-capacity 相关内容（PAYG 建议引注与致谢条目）
+
+---
+
 ## [v1.3.7] - 2026-09-16
 
 ### Changed

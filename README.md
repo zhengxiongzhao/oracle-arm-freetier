@@ -69,8 +69,6 @@ flowchart TD
 
 **选区建议**：稳妥拿机器 → 注册即选美东（如 Ashburn）；追求低延迟且愿意长期挂脚本 → 东京/新加坡/首尔。
 
-> 💡 同类项目 [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) 引用的社区经验：升级 Pay As You Go 后免费额度不变，但创建实例享有优先权，`Out of host capacity` 概率大幅降低。⚠️ PAYG 需配置预算告警，且非主区域资源照常计费。
-
 ## 快速开始（Docker，推荐）
 
 ```bash
@@ -196,7 +194,6 @@ Docker：`docker compose stop`。裸进程：`setup_init.sh` 启动时显示的 
 
 ## 参考与致谢
 
-- [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) —— 同类 PHP 实现与本项目的 PAYG 经验来源
 - [Oracle LaunchInstance API](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/Instance/LaunchInstance) / [LaunchInstanceDetails](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/datatypes/LaunchInstanceDetails)
 - [Oracle 公共云区域列表](https://www.oracle.com/cloud/public-cloud-regions/) / [Oracle Cloud Free Tier FAQ](https://www.oracle.com/cloud/free/faq/)
 - 上游原项目 [mohankumarpaluru/oracle-freetier-instance-creation](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation)
