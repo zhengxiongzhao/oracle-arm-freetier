@@ -9,7 +9,7 @@
 </div>
 
 
-This project provides Python and shell scripts to automate the creation of Oracle Free Tier ARM instances (2 OCPU, 12 GB RAM) or the Oracle Free Tier AMD instance (1 OCPU, 1 GB RAM) with minimal manual intervention. Acquiring resources in certain availability domains can be challenging due to high demand, and repeatedly attempting creation through the Oracle console is impractical. While other methods like OCI CLI and PHP are available (linked at the end), this solution aims to streamline the process by implementing it in Python.
+This project provides Python and shell scripts to automate the creation of Oracle Free Tier ARM instances (up to 4 OCPU, 24 GB RAM, Always Free monthly allotment) or the Oracle Free Tier AMD instance (1 OCPU, 1 GB RAM) with minimal manual intervention. Acquiring resources in certain availability domains can be challenging due to high demand, and repeatedly attempting creation through the Oracle console is impractical. While other methods like OCI CLI and PHP are available (linked at the end), this solution aims to streamline the process by implementing it in Python.
 
 The script attempts to create an instance every 60 seconds or as per the `REQUEST_WAIT_TIME_SECS` variable specified in the `oci.env` file until the instance is successfully created. Upon completion, a file named `INSTANCE_CREATED` is generated in the project directory, containing details about the newly created instance. Additionally, you can configure the script to send a Gmail notification upon instance creation.
 
@@ -24,6 +24,36 @@ In short, this script is another way to bypass the "Out of host capacity" or "Ou
 - SSH keys for ARM instances can be automatically created
 - OS configuration based on Image ID or OS and version
 - Compute shape configuration
+
+## Home Region & Region Selection (READ THIS FIRST)
+
+> [!IMPORTANT]
+> **Oracle Free（永久免费）计划无法变更主区域（Home Region）。** 注册账户时选择的区域会成为该账户的 Home Region，所有 *Always Free* 资源（AMD 微型实例、Ampere A1 ARM 实例、免费数据库等）**只能在主区域创建和使用**。账户创建后主区域永久锁定，无法更改、迁移或转让。
+> - [Managing Regions — Oracle Docs](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/managingregions.htm)
+> - [Oracle Cloud Free Tier](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier.htm)
+> - [Oracle Cloud 免费层入门（中文）](https://docs.oracle.com/zh-cn/learn/cloud_free_tier/index.html)
+>
+> 如需更换主区域，唯一官方途径是**注销并删除当前租户/账户，再用新邮箱和信用卡重新注册**（重新注册有失败或被拒的风险）。即使升级为现用现付（Pay As You Go）解锁其他区域，**非主区域创建的资源也不享受免费额度，会直接产生扣费**。因此**请务必在注册时就选好目标区域**。
+
+### 热门永久免费区域一览（国内用户视角）
+
+> 理论上所有提供商业服务的公共云区域都可选（Oracle 全球有 50+ 区域）；"可选"不等于"能开出机器"——热门区域免费 ARM 长期缺货，需靠脚本长期重试"抢注"。
+
+| 地区 | 区域 | 特点 |
+|---|---|---|
+| 🌏 亚太 | 中国香港 (Hong Kong) | 延迟极低，但长期严重缺货，极难抢到 ARM |
+| 🌏 亚太 | 日本东京 (Tokyo) / 大阪 (Osaka) | 速度快、线路相对稳定，东京缺货常态化 |
+| 🌏 亚太 | 新加坡 (Singapore) | 热门，移动/联通线路表现较好 |
+| 🌏 亚太 | 首尔 (Seoul) / 春川 (Chuncheon) | 首尔受欢迎但经常容量不足 |
+| 🇺🇸 北美 | 圣何塞 (San Jose) / 凤凰城 (Phoenix) | 美西，联通/电信直连尚可，容量相对充足 |
+| 🇺🇸 北美 | 阿什本 (Ashburn) / 芝加哥 (Chicago) | 美东，延迟高但**容量最充裕，最容易开出 4C24G ARM** |
+| 🇪🇺 欧洲 | 法兰克福 (Frankfurt) / 伦敦 (London) | 欧洲核心节点，常作备选 |
+
+**选区建议**：若核心目标是稳妥拿到 4 核 24GB 免费 ARM 实例，注册时避开热门亚太区域，优先选择美东（如 Ashburn）；若追求低延迟且愿意长期挂脚本抢，可选东京/新加坡/首尔。
+
+### 从 hitrov/oci-arm-host-capacity 借鉴的补充建议
+
+同领域知名项目 [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity)（PHP 实现，原理相同：轮询调用 LaunchInstance API）在其 README 中提到，2024 年以来 Reddit 社区普遍建议**升级到 Pay As You Go (PAYG)**：免费额度保持不变、零额外成本（前提是只跑免费额度内资源），但创建实例享有优先权，大幅降低 `Out of host capacity` 概率，还解锁更多 OCI 资源类型。⚠️ PAYG 需配置预算告警作为安全网，并留意部署资源的计费项，避免超免费额度产生扣费。
 
 ## Pre-Requisites
 - **VM.Standard.E2.1.Micro Instance**: The script is designed for a Ubuntu environment, and you need an existing subnet ID for ARM instance creation. Create an always-free `VM.Standard.E2.1.Micro` instance with Ubuntu 22.04. This instance can be deleted after the ARM instance creation. (Not required if an existing OCI_SUBNET_ID is defined in oci.env file)
@@ -261,7 +291,8 @@ Not necessarily. It means you have hit a service limit in your tenancy. Log into
 **For more error-specific help see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).**
 
 ## Credits and References
+- [hitrov](https://github.com/hitrov)/[oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity): [Resolving Oracle Cloud Out of Capacity Issue and Getting Free VPS with 4 ARM Cores, 24GB of RAM](https://hitrov.medium.com/resolving-oracle-cloud-out-of-capacity-issue-and-getting-free-vps-with-4-arm-cores-24gb-of-6ecd5ede6fcc) — 同类 PHP 实现,PAYG 建议与排障经验来源
 - [xitroff](https://www.reddit.com/user/xitroff/): [Resolving Oracle Cloud Out of Capacity Issue and Getting Free VPS with 4 ARM Cores, 24GB of RAM](https://hitrov.medium.com/resolving-oracle-cloud-out-of-capacity-issue-and-getting-free-vps-with-4-arm-cores-24gb-of-a3d7e6a027a8)
-  - [Github Repo](https://github.com/hitrov/oci-arm-host-capacity)
 - [Oracle Launch Instance Docs](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/Instance/LaunchInstance)
 - [LaunchInstanceDetails](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/datatypes/LaunchInstanceDetails)
+- [Oracle 公共云区域列表](https://www.oracle.com/cloud/public-cloud-regions/) / [Oracle Cloud Free Tier FAQ](https://www.oracle.com/cloud/free/faq/)

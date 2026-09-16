@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v1.3.6] - 2026-09-16
+
+### Changed
+- README 新增「Home Region & Region Selection」章节：主区域永久锁定不可变更（换区唯一途径是注销重注册）、PAYG 升级不改变非主区域计费、热门永久免费区域对照表（亚太/北美/欧洲）与选区建议（稳妥拿 4C24G ARM 选美东）、hitrov/oci-arm-host-capacity 的 PAYG 优先创建建议；ARM 免费额度描述修正为 4 OCPU/24GB（原误写 2 OCPU/12GB）；Credits 补充 hitrov 项目与 Oracle 区域/FAQ 官方链接
+
+---
+
 ## [v1.3.5] - 2026-09-16
 
 ### Changed
