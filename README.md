@@ -102,6 +102,8 @@ docker logs -f oracle-freetier   # 实时查看抢实例日志
 
 ## 配置项（oci.env）
 
+> 配置字段的设计与取值来源参考 [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) 的 `.env` 配置方案；各字段（AD / 子网 / 镜像等）在 OCI 控制台的获取位置可对照其 [Configuration 说明](https://github.com/hitrov/oci-arm-host-capacity#configuration)填写。
+
 **必填：**
 
 | 变量 | 说明 |
@@ -194,6 +196,7 @@ Docker：`docker compose stop`。裸进程：`setup_init.sh` 启动时显示的 
 
 ## 参考与致谢
 
+- [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) —— 本项目配置项设计参考来源
 - [Oracle LaunchInstance API](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/Instance/LaunchInstance) / [LaunchInstanceDetails](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/datatypes/LaunchInstanceDetails)
 - [Oracle 公共云区域列表](https://www.oracle.com/cloud/public-cloud-regions/) / [Oracle Cloud Free Tier FAQ](https://www.oracle.com/cloud/free/faq/)
 - 上游原项目 [mohankumarpaluru/oracle-freetier-instance-creation](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation)

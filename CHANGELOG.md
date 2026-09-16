@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v1.3.9] - 2026-09-16
+
+### Changed
+- README 配置项章节注明字段设计与取值参考来源 hitrov/oci-arm-host-capacity，致谢恢复 hitrov 条目（定位为配置参考来源）
+
+---
+
 ## [v1.3.8] - 2026-09-16
 
 ### Removed
