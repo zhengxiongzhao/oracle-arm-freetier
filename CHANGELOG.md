@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [v1.5.0] - 2026-09-16
+
+### Added
+- ARM 实例规格配置化：新增 `OCI_OCPUS`（默认 1）/ `OCI_MEMORY_IN_GBS`（默认 6）环境变量，替换 main.py 硬编码的 2 OCPU/12 GB；启动时日志输出实际申请规格并提示在 OCI 控制台确认
+
+### Changed
+- README 按代码核对修正配置文档：头部规格描述改为默认 1 OCPU/6 GB（上限 4/24 提示保留）、`OCT_FREE_AD` 注明后缀匹配（AD-1 或全名均可）、`OCI_SUBNET_ID` 留空实际取租户第一个子网、`OCI_CONFIG` 注明五项结构与 `user` 来源、SSH 私钥自动生成文件名说明
+
+---
+
 ## [v1.4.1] - 2026-09-16
 
 ### Changed

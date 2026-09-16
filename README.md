@@ -1,6 +1,8 @@
 # Oracle Cloud 抢免费 ARM 实例（OCI Free Tier Instance Creation）
 
-用 Python 轮询 OCI LaunchInstance API，自动抢注 Oracle 永久免费（Always Free）的 **Ampere A1 ARM 实例（最高 4 OCPU / 24 GB 内存）** 或 AMD 微型实例（1 OCPU / 1 GB），绕开控制台手动重试的痛苦。
+用 Python 轮询 OCI LaunchInstance API，自动抢注 Oracle 永久免费（Always Free）的 **Ampere A1 ARM 实例（默认 1 OCPU / 6 GB 内存，可配置）** 或 AMD 微型实例（1 OCPU / 1 GB），绕开控制台手动重试的痛苦。
+
+> Oracle 免费额度上限为 4 OCPU / 24 GB；本脚本默认按 1 OCPU / 6 GB 申请，通过 `OCI_OCPUS` / `OCI_MEMORY_IN_GBS` 调整（见配置表），抢到后在 OCI 控制台实例详情页确认实际规格。
 
 > [!IMPORTANT]
 > **开始前必读：[主区域选择](#主区域选择必读)——Oracle 免费层主区域一经注册永久锁定，选错区域无法挽回。**
@@ -106,8 +108,8 @@ docker logs -f oracle-freetier   # 实时查看抢实例日志
 
 | 变量 | 说明 |
 |---|---|
-| `OCI_CONFIG` | OCI API 配置文件的绝对路径 |
-| `OCT_FREE_AD` | Always Free 可用域（AD），多个用逗号分隔，逐次轮换重试（非并行） |
+| `OCI_CONFIG` | OCI API 配置文件的绝对路径（`user`/`fingerprint`/`tenancy`/`region`/`key_file` 五项，格式见 `sample_oci_config`；`user` 即 API 密钥配置中的 user OCID） |
+| `OCT_FREE_AD` | Always Free 可用域（AD），多个用逗号分隔，逐次轮换重试（非并行）。按后缀匹配，填短后缀 `AD-1` 或全名 `AP-TOKYO-1-AD-1` 均可 |
 
 **可选：**
 
@@ -116,10 +118,12 @@ docker logs -f oracle-freetier   # 实时查看抢实例日志
 | `DISPLAY_NAME` | — | 实例名称 |
 | `LOG_TO` | `stdout` | 日志输出目标：`stdout`（标准输出，`docker logs` 直接可见）/ `file`（写 `launch_instance.log` 等文件）/ `both` 两者 |
 | `REQUEST_WAIT_TIME_SECS` | `60` | 重试间隔秒数；低于 30 有触发 OCI 限流（`TooManyRequests`）风险 |
-| `SSH_AUTHORIZED_KEYS_FILE` | 自动生成 | SSH 公钥绝对路径；文件不存在时自动生成密钥对 |
-| `OCI_SUBNET_ID` | — | 已有子网 OCID；**本地运行必填**，在 Micro 实例上运行留空可自动探测 |
+| `SSH_AUTHORIZED_KEYS_FILE` | 自动生成 | SSH 公钥绝对路径；文件不存在时自动生成密钥对（私钥文件名为 `<公钥文件名>_private`，生成后保存在同目录） |
+| `OCI_SUBNET_ID` | — | 已有子网 OCID；**本地运行必填**。留空时自动取租户内第一个子网（list_subnets 首项），建议显式指定以免选到非预期子网 |
 | `OCI_IMAGE_ID` | — | 镜像 OCID；留空则按 `OPERATING_SYSTEM`+`OS_VERSION` 选最新镜像，全部可选项写入 `images_list.json` |
 | `OCI_COMPUTE_SHAPE` | `VM.Standard.A1.Flex` | 计算形态：`VM.Standard.A1.Flex`（ARM）或 `VM.Standard.E2.1.Micro`（AMD） |
+| `OCI_OCPUS` | `1` | ARM 实例 OCPU 数（免费额度上限 4）；抢到后在 OCI 控制台实例详情页确认实际规格 |
+| `OCI_MEMORY_IN_GBS` | `6` | ARM 实例内存 GB（免费额度上限 24） |
 | `SECOND_MICRO_INSTANCE` | `False` | 抢第二台 Always Free 微型实例时设 `True` |
 | `OPERATING_SYSTEM` / `OS_VERSION` | — | 按名称选镜像时的系统名与版本 |
 | `ASSIGN_PUBLIC_IP` | `false` | 自动分配临时公网 IP |

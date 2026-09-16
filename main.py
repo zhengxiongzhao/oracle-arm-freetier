@@ -40,6 +40,9 @@ OCT_FREE_AD = os.getenv("OCT_FREE_AD", "").strip()
 DISPLAY_NAME = os.getenv("DISPLAY_NAME", "").strip()
 WAIT_TIME = int(os.getenv("REQUEST_WAIT_TIME_SECS", "0").strip())
 SSH_AUTHORIZED_KEYS_FILE = os.getenv("SSH_AUTHORIZED_KEYS_FILE", "").strip()
+# ARM (VM.Standard.A1.Flex) 实例规格,可在 oci.env 覆盖;默认 1 OCPU / 6 GB
+OCI_OCPUS = int(os.getenv("OCI_OCPUS", "1"))
+OCI_MEMORY_IN_GBS = int(os.getenv("OCI_MEMORY_IN_GBS", "6"))
 OCI_IMAGE_ID = os.getenv("OCI_IMAGE_ID", None).strip() if os.getenv("OCI_IMAGE_ID") else None
 OCI_COMPUTE_SHAPE = os.getenv("OCI_COMPUTE_SHAPE", ARM_SHAPE).strip()
 SECOND_MICRO_INSTANCE = os.getenv("SECOND_MICRO_INSTANCE", 'False').strip().lower() == 'true'
@@ -654,7 +657,10 @@ def launch_instance():
     instance_exist_flag = check_instance_state_and_write(oci_tenancy, OCI_COMPUTE_SHAPE, tries=1)
 
     if OCI_COMPUTE_SHAPE == "VM.Standard.A1.Flex":
-        shape_config = oci.core.models.LaunchInstanceShapeConfigDetails(ocpus=2, memory_in_gbs=12)
+        shape_config = oci.core.models.LaunchInstanceShapeConfigDetails(
+            ocpus=OCI_OCPUS, memory_in_gbs=OCI_MEMORY_IN_GBS)
+        logging.info("ARM shape config: %s OCPU / %s GB (在 OCI 控制台创建实例页面可确认规格)",
+                     OCI_OCPUS, OCI_MEMORY_IN_GBS)
     else:
         shape_config = oci.core.models.LaunchInstanceShapeConfigDetails(ocpus=1, memory_in_gbs=1)
 
