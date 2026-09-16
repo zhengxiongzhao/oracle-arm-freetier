@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v1.4.1] - 2026-09-16
+
+### Changed
+- README 微信 ClawBot 小节补全本地网关模式配置（`WECHAT_GATEWAY_URL` / `API_KEY` / `SECRET`，即代码 main.py:63-64、528-542 与 oci.env 均支持但文档遗漏的模式），直连/网关两种模式分列说明；核对确认 README 已覆盖代码读取的全部 27 个环境变量
+
+---
+
 ## [v1.4.0] - 2026-09-16
 
 ### Added

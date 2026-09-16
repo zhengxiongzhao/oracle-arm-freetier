@@ -194,6 +194,8 @@ TELEGRAM_USER_ID=your_telegram_user_id
 
 ### 微信 ClawBot（内置，腾讯 iLink 协议）
 
+**直连模式（默认）**——脚本直接调用 iLink 接口：
+
 ```
 WECHAT_CLAWBOT_TOKEN=your_bot_token        # ClawBot 登录会话 token
 WECHAT_CLAWBOT_BASEURL=                     # 可选,默认 https://ilinkai.weixin.qq.com
@@ -201,11 +203,19 @@ WECHAT_TO_USER_ID=your_id@im.wechat
 WECHAT_CTX_TOKEN=your_context_token
 ```
 
+**本地网关模式（推荐）**——设置 `WECHAT_GATEWAY_URL` 后改走自部署的 [weixin-ClawBot-API](https://github.com/zhengxiongzhao/weixin-ClawBot-API) 网关（`/api/v1/send`），由网关统一维护登录会话，脚本侧无需管理 token 刷新：
+
+```
+WECHAT_GATEWAY_URL=http://clawbot-gateway:8080    # 网关地址(容器网络用服务名,宿主机用 127.0.0.1:端口)
+WECHAT_GATEWAY_API_KEY=your_gateway_api_key       # 网关鉴权 key,同时作为默认签名密钥
+WECHAT_GATEWAY_SECRET=                            # 可选,签名密钥覆盖,默认取 API Key
+```
+
 微信是双向会话协议而非纯 webhook：
 
-- `WECHAT_CLAWBOT_TOKEN` 来自扫码登录的 ClawBot 会话（官方 `@tencent-weixin/openclaw-weixin` 插件或 weixin-ClawBot-API 客户端登录一次并持久化会话）
+- 直连模式下 `WECHAT_CLAWBOT_TOKEN` 来自扫码登录的 ClawBot 会话（官方 `@tencent-weixin/openclaw-weixin` 插件或 weixin-ClawBot-API 客户端登录一次并持久化会话）
 - `WECHAT_CTX_TOKEN` 是**入站**消息的上下文 token：需先给 ClawBot 发一条微信消息，bot 记录 `to_user_id` + `context_token` 后本脚本才能推送；会话过期推送会失败，此时再发一条消息刷新 token
-- 任一必填键为空时微信通知静默禁用
+- 任一必填键为空时微信通知静默禁用；网关模式只需 3 个 `WECHAT_GATEWAY_*` 变量即可
 
 ### Discord / Gmail
 
