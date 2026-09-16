@@ -1,121 +1,21 @@
-# Oracle Free Tier Instance Creation Through Python
+# Oracle Cloud 抢免费 ARM 实例（OCI Free Tier Instance Creation）
 
-[![Created Badge](https://badges.pufler.dev/created/mohankumarpaluru/oracle-freetier-instance-creation)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation) [![Updated Badge](https://badges.pufler.dev/updated/mohankumarpaluru/oracle-freetier-instance-creation)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation) [![Visits Badge](https://badges.pufler.dev/visits/mohankumarpaluru/oracle-freetier-instance-creation)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation) [![HitCount](https://img.shields.io/endpoint?url=https%3A%2F%2Fhits.dwyl.com%2Fmohankumarpaluru%2Foracle-freetier-instance-creation.svg%3Fstyle%3Dflat%26show%3Dunique%3Fcolor=brightgreen)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation) [![GitHub stars](https://img.shields.io/github/stars/mohankumarpaluru/oracle-freetier-instance-creation?color=brightgreen)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/mohankumarpaluru/oracle-freetier-instance-creation?color=brightgreen)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation/issues) [![GitHub forks](https://img.shields.io/github/forks/mohankumarpaluru/oracle-freetier-instance-creation?color=brightgreen)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation/network) [![GitHub license](https://img.shields.io/github/license/mohankumarpaluru/oracle-freetier-instance-creation?color=brightgreen)](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation/blob/main/LICENSE)
-
-
-<div style="text-align:center;">
-    <img src="https://github.com/mohankumarpaluru/oracle-freetier-instance-creation/raw/refs/heads/main/ai-image.jpg" alt="Project Cover" height="300">
-</div>
-
-
-This project provides Python and shell scripts to automate the creation of Oracle Free Tier ARM instances (up to 4 OCPU, 24 GB RAM, Always Free monthly allotment) or the Oracle Free Tier AMD instance (1 OCPU, 1 GB RAM) with minimal manual intervention. Acquiring resources in certain availability domains can be challenging due to high demand, and repeatedly attempting creation through the Oracle console is impractical. While other methods like OCI CLI and PHP are available (linked at the end), this solution aims to streamline the process by implementing it in Python.
-
-The script attempts to create an instance every 60 seconds or as per the `REQUEST_WAIT_TIME_SECS` variable specified in the `oci.env` file until the instance is successfully created. Upon completion, a file named `INSTANCE_CREATED` is generated in the project directory, containing details about the newly created instance. Additionally, you can configure the script to send a Gmail notification upon instance creation.
-
-**Note: This script doesn't configure a public IP by default; you need to configure it post the creation of the instance from the console. (Planning on automating it soon)**
-
-In short, this script is another way to bypass the "Out of host capacity" or "Out of capacity for shape VM.Standard.A1.Flex" error and create an instance when the resources are freed up.
-
-## Features
-- Single file needs to be run after basic setup
-- Configurable wait time and DISPLAY_NAME
-- Gmail notification
-- SSH keys for ARM instances can be automatically created
-- OS configuration based on Image ID or OS and version
-- Compute shape configuration
-
-## Home Region & Region Selection (READ THIS FIRST)
+用 Python 轮询 OCI LaunchInstance API，自动抢注 Oracle 永久免费（Always Free）的 **Ampere A1 ARM 实例（最高 4 OCPU / 24 GB 内存）** 或 AMD 微型实例（1 OCPU / 1 GB），绕开控制台手动重试的痛苦。
 
 > [!IMPORTANT]
-> **Oracle Free（永久免费）计划无法变更主区域（Home Region）。** 注册账户时选择的区域会成为该账户的 Home Region，所有 *Always Free* 资源（AMD 微型实例、Ampere A1 ARM 实例、免费数据库等）**只能在主区域创建和使用**。账户创建后主区域永久锁定，无法更改、迁移或转让。
-> - [Managing Regions — Oracle Docs](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/managingregions.htm)
-> - [Oracle Cloud Free Tier](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier.htm)
-> - [Oracle Cloud 免费层入门（中文）](https://docs.oracle.com/zh-cn/learn/cloud_free_tier/index.html)
->
-> 如需更换主区域，唯一官方途径是**注销并删除当前租户/账户，再用新邮箱和信用卡重新注册**（重新注册有失败或被拒的风险）。即使升级为现用现付（Pay As You Go）解锁其他区域，**非主区域创建的资源也不享受免费额度，会直接产生扣费**。因此**请务必在注册时就选好目标区域**。
+> **开始前必读：[主区域选择](#主区域选择必读)——Oracle 免费层主区域一经注册永久锁定，选错区域无法挽回。**
 
-### 热门永久免费区域一览（国内用户视角）
+<p align="center">
+    <img src="ai-image.jpg" alt="Project Cover" height="300">
+</p>
 
-> 理论上所有提供商业服务的公共云区域都可选（Oracle 全球有 50+ 区域）；"可选"不等于"能开出机器"——热门区域免费 ARM 长期缺货，需靠脚本长期重试"抢注"。
+## 工作原理
 
-| 地区 | 区域 | 特点 |
-|---|---|---|
-| 🌏 亚太 | 中国香港 (Hong Kong) | 延迟极低，但长期严重缺货，极难抢到 ARM |
-| 🌏 亚太 | 日本东京 (Tokyo) / 大阪 (Osaka) | 速度快、线路相对稳定，东京缺货常态化 |
-| 🌏 亚太 | 新加坡 (Singapore) | 热门，移动/联通线路表现较好 |
-| 🌏 亚太 | 首尔 (Seoul) / 春川 (Chuncheon) | 首尔受欢迎但经常容量不足 |
-| 🇺🇸 北美 | 圣何塞 (San Jose) / 凤凰城 (Phoenix) | 美西，联通/电信直连尚可，容量相对充足 |
-| 🇺🇸 北美 | 阿什本 (Ashburn) / 芝加哥 (Chicago) | 美东，延迟高但**容量最充裕，最容易开出 4C24G ARM** |
-| 🇪🇺 欧洲 | 法兰克福 (Frankfurt) / 伦敦 (London) | 欧洲核心节点，常作备选 |
+热门区域的免费 ARM 实例长期缺货，手动在控制台反复点创建不现实。本脚本按设定间隔（默认 60 秒）持续调用 OCI 的 `LaunchInstance` API，一旦 Oracle 释放容量即刻抢占：
 
-**选区建议**：若核心目标是稳妥拿到 4 核 24GB 免费 ARM 实例，注册时避开热门亚太区域，优先选择美东（如 Ashburn）；若追求低延迟且愿意长期挂脚本抢，可选东京/新加坡/首尔。
-
-### 从 hitrov/oci-arm-host-capacity 借鉴的补充建议
-
-同领域知名项目 [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity)（PHP 实现，原理相同：轮询调用 LaunchInstance API）在其 README 中提到，2024 年以来 Reddit 社区普遍建议**升级到 Pay As You Go (PAYG)**：免费额度保持不变、零额外成本（前提是只跑免费额度内资源），但创建实例享有优先权，大幅降低 `Out of host capacity` 概率，还解锁更多 OCI 资源类型。⚠️ PAYG 需配置预算告警作为安全网，并留意部署资源的计费项，避免超免费额度产生扣费。
-
-## Pre-Requisites
-- **VM.Standard.E2.1.Micro Instance**: The script is designed for a Ubuntu environment, and you need an existing subnet ID for ARM instance creation. Create an always-free `VM.Standard.E2.1.Micro` instance with Ubuntu 22.04. This instance can be deleted after the ARM instance creation. (Not required if an existing OCI_SUBNET_ID is defined in oci.env file)
-- **OCI API Key (Private Key) & Config Details**: Follow this [Oracle API Key Generation link](https://graph.org/Oracle-API-Key-Generation-12-11) to create the necessary API key and config details.
- - Note: Typically the API Key can be generated from your profile [page](https://cloud.oracle.com/identity/domains/my-profile/api-keys) > API Keys (left) > Add API Key
-- **OCI Free Availability Domain**: Identify the eligible always-free tier availability domain during instance creation.
-- **Gmail App Passkey (Optional)**: If you want to receive an email notification after instance creation and have two-factor authentication enabled, follow this [Google App's Password Generation link](https://graph.org/Google-App-Passwords-Generation-12-11) to create a custom app and obtain the passkey.
-
-## Setup
-
-1. SSH into the VM.Standard.E2.1.Micro Ubuntu machine, clone this repository, and navigate to the project directory. Change the permissions of `setup_init.sh` to make it executable.
-    ```bash
-    git clone https://github.com/mohankumarpaluru/oracle-freetier-instance-creation.git
-    cd oracle-freetier-instance-creation
-    ```
-
-2. Create a file named `oci_api_private_key.pem` and paste the contents of your API private key. The name and path of the file can be anything, but the current user should have read access.
-
-3. Create a file named `oci_config` inside the repository directory. Paste the config details copied during the OCI API key creation. Refer to `sample_oci_config`.
-
-4. In your `oci_config`, fill the **`key_file`** with the absolute path of your `oci_api_private_key.pem`. For example, `/home/ubuntu/oracle-freetier-instance-creation/oci_api_private_key.pem`.
-
-5. Edit the **`oci.env`** file and fill in the necessary details. Refer [below for more information](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation#environment-variables) `oci.env` fields.
-
-	You can also use run the `setup_env.sh` script to interactively generate the `oci.env` file with your desired configuration:
-
-    ```bash
-    ./setup_env.sh
-    ```
-
-    This script will guide you through the process of configuring your instance settings, including the instance name, compute shape, optional Gmail notifications, and more.
-
-    > [!Note]
-    > If an `oci.env` file already exists, the script will create a backup of the current file as `oci.env.bak`.
-
-
-## Run
-
-Once the setup is complete, run the `setup_init.sh` script from the project directory. This script installs the required dependencies and starts the Python program in the background.
-```bash
-./setup_init.sh
-```
-If you are running in a fresh `VM.Standard.E2.1.Micro` instance, you might receive a prompt *Daemons using outdated libraries*. Just click `OK`; that's due to updating the libraries through apt update and won't be asked again.
-
-If you are running in your local instead of `VM.Standard.E2.1.Micro` instance, make sure you fill the `OCI_SUBNET_ID`.
-
-The script will display an error prompt if an issue arises; otherwise, it will show "Script is running successfully."
-
-View the logs of the instance creation API call in `launch_instance.log` and details about the parameters used (availability-domain, compartment-id, subnet-id, image-id) in `setup_and_info.log`.
-
-## Errors and Re-Run
-
-If the `oci_config` file is found to be incorrect, the script generates an `ERROR_IN_CONFIG.log` file. Verify the `oci_config` for accuracy, ensuring it aligns with the [sample_oci_config](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation/blob/85b3ec065a91bb66206933a12a6bd58941446118/sample_oci_config#L1C1-L6C80) without any additional lines or characters.
-
-
-In case of an unhandled exception leading to script termination, an email containing the logs is sent if opted. Otherwise, only the error logs are printed to `UNHANDLED_ERROR.log`. Review the logs and execute the script again using the following command (which skips dependency installation). If the issue persists, raise an issue with the contents of `UNHANDLED_ERROR.log`.
-
-```bash
-./setup_init.sh rerun
-```
-
-## OCI Instance Creation Flow
+- 抢到实例后自动停止，并在项目目录生成 `INSTANCE_CREATED` 文件（含实例详情）
+- 同时通过已配置的通知渠道（Telegram / 微信 / Discord / 邮件）推送结果
+- 支持多可用域（AD）轮换重试、SSH 密钥自动生成、镜像按名称或 OCID 指定
 
 ```mermaid
 flowchart TD
@@ -148,151 +48,155 @@ flowchart TD
     class N,O error;
 ```
 
-## TODO
-- [ ] Ability to run script locally :
-	- [x] By letting user configure existing oracle subnet id in `OCI_CONFIG`.
-	- [ ] By creating VPC and subnet from Script if running locally (need to handle the free tier limits).
-- [ ] Make Boot Volume Size configurable and handle errors and free tier limits.
-- [ ] Assign a public IP through the script and handle free tier limits.
-- [ ] Make the script interavtive by displaying a list of images and OS that can be used before launching an instance to select.
-- [x] Redirect logs to a Telegram Bot.
+## 主区域选择（必读）
 
-## Environment Variables
-**Required Fields:**
+**Oracle Free 永久免费计划无法变更主区域（Home Region）。** 注册时选择的区域即账户主区域，所有 Always Free 资源（AMD 微型实例、Ampere A1 ARM、免费数据库等）**只能在主区域创建和使用**，注册完成后永久锁定，无法更改、迁移或转让（[官方文档](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/managingregions.htm)、[Free Tier 说明](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier.htm)）。
 
-- `OCI_CONFIG`:  Absolute path to the file with OCI API Config Detail content
-- `OCT_FREE_AD`: Availability Domain that's eligible for *Always-Free Tier*. If multiple, separate by commas. The script rotates through them on each retry attempt — it does **not** try them in parallel.
+- 想换主区域，唯一官方途径是**注销当前租户，用新邮箱+新信用卡重新注册**（有被拒风险）
+- 升级 Pay As You Go 可解锁其他区域，但**非主区域的资源不享受免费额度，直接扣费**
 
-**Optional Fields:**
-- `DISPLAY_NAME`: Name of the Instance
-- `LOG_TO`: 日志输出目标。`stdout`（默认）输出到标准输出（容器运行时可直接 `docker logs` 查看实时抢实例日志）；`file` 仅写入项目目录下的 `setup_and_info.log` / `launch_instance.log`；`both` 两者兼有。容器方式运行默认 `stdout`，docker-compose 已设 `PYTHONUNBUFFERED=1` 确保实时刷新。
-- `REQUEST_WAIT_TIME_SECS`: Wait before trying to launch an instance again.
-- `SSH_AUTHORIZED_KEYS_FILE`: Give the absolute path of an SSH public key for ARM instance. **The program will create a public and private key pair with the name specified if the key file doesn't exist; otherwise, it uses the one specified**.
-- `OCI_SUBNET_ID`: The `OCID` of an existing subnet. **Required when running the script locally** (not on an OCI Micro instance). Leave empty when running on a Micro instance — the script auto-detects the subnet. If left empty while running locally the script may pick an unexpected subnet.
-    >  This can be found in `Networking` > `Virtual cloud networks` > `<VPC-Name>` > `Subnet Details`.
-- `OCI_IMAGE_ID`: Specific image OCID to use. If left empty, the script uses `OPERATING_SYSTEM` + `OS_VERSION` to find the newest matching image and writes all available options to `images_list.json` on the first run — check that file to find valid image OCIDs.
-- `OCI_COMPUTE_SHAPE`: Free-tier compute shape of the instance to launch. Defaults to ARM, but configurable if you are running into capacity issues for the free AMD instance in your home region. Acceptable values `VM.Standard.A1.Flex` and `VM.Standard.E2.1.Micro`.
-- `SECOND_MICRO_INSTANCE`: Set to `True` only if you are trying to create your **second** Always-Free Micro instance. If you are running the script to create your first Micro instance (or any ARM instance), keep this `False`.
-- `OPERATING_SYSTEM`: Exact name of the operating system
-- `OS_VERSION`: Exact version of the operating system
-- `ASSIGN_PUBLIC_IP`: Automatically assign an ephemeral public IP address
-- `BOOT_VOLUME_SIZE`: Size of boot volume in GB, values below 50 will be ignored and default to 50.
-- `NOTIFY_EMAIL`: Make it True if you want to get notified and provide email and password
-- `EMAIL`: Only Gmail is allowed, the same email will be used for *FROM* and *TO*
-- `EMAIL_PASSWORD`: If two-factor authentication is set, create an App Password and specify it, not the email password. Direct password will work if no two-factor authentication is configured for the email.
-- `DISCORD_WEBHOOK`: URL of the Discord webhook for notifications (optional)
+### 热门免费区域一览（国内用户视角）
 
-## Discord Webhook Notifications
+| 地区 | 区域 | 特点 |
+|---|---|---|
+| 🌏 亚太 | 中国香港 | 延迟极低，但长期严重缺货，极难抢到 ARM |
+| 🌏 亚太 | 东京 / 大阪 | 速度快、线路稳定，东京缺货常态化 |
+| 🌏 亚太 | 新加坡 | 热门，移动/联通线路表现较好 |
+| 🌏 亚太 | 首尔 / 春川 | 首尔受欢迎但经常容量不足 |
+| 🇺🇸 北美 | 圣何塞 / 凤凰城 | 美西，联通/电信直连尚可，容量相对充足 |
+| 🇺🇸 北美 | 阿什本 / 芝加哥 | 美东，延迟高但**容量最充裕，最容易开出 4C24G** |
+| 🇪🇺 欧洲 | 法兰克福 / 伦敦 | 欧洲核心节点，常作备选 |
 
-To receive notifications via Discord when an instance is created or when errors occur, you can set up a Discord webhook:
+**选区建议**：稳妥拿机器 → 注册即选美东（如 Ashburn）；追求低延迟且愿意长期挂脚本 → 东京/新加坡/首尔。
 
-1. In your Discord server, go to Server Settings > Integrations > Webhooks.
-2. Click "New Webhook" and configure it for the channel where you want to receive notifications.
-3. Copy the webhook URL.
-4. Add the following line to your `oci.env` file:
+> 💡 同类项目 [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) 引用的社区经验：升级 Pay As You Go 后免费额度不变，但创建实例享有优先权，`Out of host capacity` 概率大幅降低。⚠️ PAYG 需配置预算告警，且非主区域资源照常计费。
 
-```
-DISCORD_WEBHOOK=your_discord_webhook_url_here
+## 快速开始（Docker，推荐）
+
+```bash
+git clone git@github.com:zhengxiongzhao/oracle-arm-freetier.git
+cd oracle-arm-freetier
 ```
 
-Replace `your_discord_webhook_url_here` with the actual webhook URL you copied.
+1. 在项目根目录放置两个凭证文件（均已 gitignore，不会入库）：
+   - `oci_api_private_key.pem` —— OCI API 私钥
+   - `oci_config` —— API Key 配置（格式见 `sample_oci_config`，`key_file` 填私钥的**绝对路径**）
+2. 编辑 `oci.env` 填写配置（也可运行 `./setup_env.sh` 交互式生成；会自动备份旧文件为 `oci.env.bak`）
+3. 启动：
 
-When configured, the script will send notifications to the specified Discord channel upon successful instance creation or if any errors occur during the process.
+```bash
+docker compose up -d
+docker logs -f oracle-freetier   # 实时查看抢实例日志
+```
 
+容器默认将日志输出到标准输出（`LOG_TO=stdout`），`docker logs` 即可观察；抢到实例后脚本退出，收到通知后手动 `docker compose stop` 即可。
 
-## Telegram Notifications (built into `main.py`)
+## 裸进程运行（备选）
 
-Besides the shell-wrapper notifications in `setup_init.sh`, `main.py` itself sends Telegram messages directly. Configure in `oci.env`:
+适合在 OCI 免费微型机（VM.Standard.E2.1.Micro Ubuntu）内运行：
+
+```bash
+./setup_init.sh          # 安装依赖并后台启动
+./setup_init.sh rerun    # 出错重跑(跳过依赖安装)
+```
+
+本地（非 OCI 机器）运行时**必须**在 `oci.env` 里填 `OCI_SUBNET_ID`，否则可能选到非预期子网。
+
+## 配置项（oci.env）
+
+**必填：**
+
+| 变量 | 说明 |
+|---|---|
+| `OCI_CONFIG` | OCI API 配置文件的绝对路径 |
+| `OCT_FREE_AD` | Always Free 可用域（AD），多个用逗号分隔，逐次轮换重试（非并行） |
+
+**可选：**
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `DISPLAY_NAME` | — | 实例名称 |
+| `LOG_TO` | `stdout` | 日志输出目标：`stdout`（标准输出，`docker logs` 直接可见）/ `file`（写 `launch_instance.log` 等文件）/ `both` 两者 |
+| `REQUEST_WAIT_TIME_SECS` | `60` | 重试间隔秒数；低于 30 有触发 OCI 限流（`TooManyRequests`）风险 |
+| `SSH_AUTHORIZED_KEYS_FILE` | 自动生成 | SSH 公钥绝对路径；文件不存在时自动生成密钥对 |
+| `OCI_SUBNET_ID` | — | 已有子网 OCID；**本地运行必填**，在 Micro 实例上运行留空可自动探测 |
+| `OCI_IMAGE_ID` | — | 镜像 OCID；留空则按 `OPERATING_SYSTEM`+`OS_VERSION` 选最新镜像，全部可选项写入 `images_list.json` |
+| `OCI_COMPUTE_SHAPE` | `VM.Standard.A1.Flex` | 计算形态：`VM.Standard.A1.Flex`（ARM）或 `VM.Standard.E2.1.Micro`（AMD） |
+| `SECOND_MICRO_INSTANCE` | `False` | 抢第二台 Always Free 微型实例时设 `True` |
+| `OPERATING_SYSTEM` / `OS_VERSION` | — | 按名称选镜像时的系统名与版本 |
+| `ASSIGN_PUBLIC_IP` | `false` | 自动分配临时公网 IP |
+| `BOOT_VOLUME_SIZE` | `50` | 启动卷大小（GB），低于 50 按 50 处理 |
+| `NOTIFY_EMAIL` / `EMAIL` / `EMAIL_PASSWORD` | — | Gmail 通知；开启 2FA 需用应用专用密码 |
+| `DISCORD_WEBHOOK` | — | Discord webhook 通知 URL |
+| `TELEGRAM_TOKEN` / `TELEGRAM_USER_ID` | — | Telegram 通知 |
+| `WECHAT_*`（见下文） | — | 微信 ClawBot 通知 |
+
+## 通知渠道
+
+### Telegram（内置）
 
 ```
 TELEGRAM_TOKEN=your_telegram_bot_token
 TELEGRAM_USER_ID=your_telegram_user_id
 ```
 
-| Timing | Message |
+| 时机 | 内容 |
 |---|---|
-| Script startup | 🚀 confirmation with the compute shape |
-| Instance created | 🎉 full instance details (ID / name / AD / shape / state) |
-| Unhandled error | 😱 error details |
+| 脚本启动 | 🚀 计算形态确认 |
+| 抢到实例 | 🎉 完整实例详情（ID / 名称 / AD / 形态 / 状态） |
+| 未处理错误 | 😱 错误详情 |
 
-> Note: the bot cannot message you first — open a chat with your bot and press Start (or send any message) before running, otherwise delivery will fail silently.
+> Bot 无法主动发起会话：运行前先给你的 bot 发一条消息或点 Start，否则通知静默失败。
 
-
-## WeChat ClawBot Notifications (built into `main.py`)
-
-`main.py` can also push notifications to WeChat via Tencent's official **iLink ClawBot protocol** (`ilinkai.weixin.qq.com`). Configure in `oci.env`:
+### 微信 ClawBot（内置，腾讯 iLink 协议）
 
 ```
-# WeChat ClawBot Notification (optional, Tencent iLink protocol)
-WECHAT_CLAWBOT_TOKEN=your_bot_token
-WECHAT_CLAWBOT_BASEURL=            # optional, defaults to https://ilinkai.weixin.qq.com
+WECHAT_CLAWBOT_TOKEN=your_bot_token        # ClawBot 登录会话 token
+WECHAT_CLAWBOT_BASEURL=                     # 可选,默认 https://ilinkai.weixin.qq.com
 WECHAT_TO_USER_ID=your_id@im.wechat
 WECHAT_CTX_TOKEN=your_context_token
 ```
 
-| Timing | Message |
+微信是双向会话协议而非纯 webhook：
+
+- `WECHAT_CLAWBOT_TOKEN` 来自扫码登录的 ClawBot 会话（官方 `@tencent-weixin/openclaw-weixin` 插件或 weixin-ClawBot-API 客户端登录一次并持久化会话）
+- `WECHAT_CTX_TOKEN` 是**入站**消息的上下文 token：需先给 ClawBot 发一条微信消息，bot 记录 `to_user_id` + `context_token` 后本脚本才能推送；会话过期推送会失败，此时再发一条消息刷新 token
+- 任一必填键为空时微信通知静默禁用
+
+### Discord / Gmail
+
+`DISCORD_WEBHOOK` 填 webhook URL；邮件通知设 `NOTIFY_EMAIL=True` 并填 Gmail 与应用专用密码。
+
+## 日志
+
+`LOG_TO` 控制输出目标（默认 `stdout`）：
+
+| 模式 | 输出位置 |
 |---|---|
-| Script startup | 🚀 confirmation with the compute shape |
-| Instance created | 🎉 full instance details (ID / name / AD / shape / state) |
-| Unhandled error | 😱 error details |
-
-> ⚠️ **Prerequisites (wechat is a two-sided session protocol, not a pure webhook):**
-> - `WECHAT_CLAWBOT_TOKEN` comes from scanning the QR code to log in a ClawBot session — use the official `@tencent-weixin/openclaw-weixin` plugin (or the SiverKing `weixin-ClawBot-API` Python client) once to log in and persist the session.
-> - `WECHAT_CTX_TOKEN` is the context token of an **inbound** message: the user must first send a WeChat message to the ClawBot; the bot records `to_user_id` + `context_token`, after which this script can push outbound messages. The token may expire with the session — if delivery stops, send the bot another message and refresh the token.
-> - All four keys are stored in `oci.env` (gitignored). If any required key is empty, WeChat notifications are silently disabled.
-
-
-## Telegram Webhook Notifications
-
-To receive notifications via Telegram when an instance is created or when errors occur, follow these steps to set up Telegram notifications:
-
-### 1. Create a Telegram Bot
-
-1. **Open Telegram** and search for `@BotFather`.
-2. **Start a conversation** with `@BotFather` by clicking on it.
-3. **Create a new bot** by sending the `/newbot` command.
-4. **Follow the prompts** to set the bot's name and username. The username must end with `bot` (e.g., `MyInstanceBot`).
-5. After creation, **BotFather will provide a Telegram Bot Token**. **Copy this token**, as you'll need it for configuration.
-
-### 2. Find Your Telegram User ID
-
-1. **Open Telegram** and search for `@myidbot`.
-2. **Start a conversation** with `@myidbot` by sending any message (e.g., "Hello").
-3. The bot will reply with your **Telegram User ID**. **Note this ID**, as it will be used to direct notifications to your account.
-
-### 3. Configure `oci.env`
-
-Add the following lines to your `oci.env` file to enable Telegram notifications:
-
-```bash
-# Telegram Notification (optional)
-TELEGRAM_TOKEN=your_telegram_bot_token_here
-TELEGRAM_USER_ID=your_telegram_user_id_here
-```
+| `stdout` | 标准输出（容器 `docker logs` 直接实时可见，compose 已设 `PYTHONUNBUFFERED=1`） |
+| `file` | `launch_instance.log`（抢实例 API 调用）+ `setup_and_info.log`（参数详情） |
+| `both` | 两者兼有 |
 
 ## FAQ
 
-**Is the script actually working? The log shows "Out of host capacity" errors.**
+**日志一直刷 "Out of host capacity"，脚本正常吗？**
+正常。该错误表示 Oracle 暂时无空闲容量，脚本会按 `REQUEST_WAIT_TIME_SECS` 持续重试，直到容量释放。持续出现这些行恰恰说明脚本在正常工作。
 
-Yes — this is completely normal. `Out of host capacity` (or `InternalError: Out of host capacity`) means Oracle doesn't have free capacity right now. The script will keep retrying every `REQUEST_WAIT_TIME_SECS` seconds until capacity opens up. As long as you see these lines in `launch_instance.log`, the script is running correctly.
+**如何停止脚本？**
+Docker：`docker compose stop`。裸进程：`setup_init.sh` 启动时显示的 PID，或 Ctrl+C / `screen -r` 后 Ctrl+C。
 
-**How do I stop the script?**
+**重试太频繁/太慢怎么调？**
+改 `REQUEST_WAIT_TIME_SECS`（默认 60 秒）。低于 30 秒易触发 `TooManyRequests` 限流。
 
-If you launched it with `setup_init.sh`, send SIGINT to the shell session (Ctrl+C) or kill the PID shown after startup. If you used `screen`, re-attach with `screen -r` then Ctrl+C. The background Python process PID is stored in `$SCRIPT_PID` while `setup_init.sh` is running.
+**出现 `LimitExceeded` 是已经抢到了吗？**
+不一定，表示触发了租户服务限额。登录 [OCI 控制台](https://cloud.oracle.com) 检查是否已有 ARM 实例（有则脚本应自动退出）；也可能与启动卷存储限额相关。
 
-**How do I change how often it retries?**
+**为什么抢到实例连不上 SSH？**
+脚本默认不分配公网 IP（除非 `ASSIGN_PUBLIC_IP=true`），需到控制台手动绑定。更多排障见 [TROUBLESHOOTING.md](TROUBLESHOOTING.md)。
 
-Set `REQUEST_WAIT_TIME_SECS` in `oci.env`. The default is 60 seconds. Setting it too low (e.g., < 30s) risks rate-limiting from OCI (`TooManyRequests` error).
+## 参考与致谢
 
-**I see a `LimitExceeded` error — does that mean I already have an instance?**
-
-Not necessarily. It means you have hit a service limit in your tenancy. Log into the [OCI Console](https://cloud.oracle.com) and check whether an ARM instance already exists. If it does, the script should detect it and exit. If not, the limit may relate to boot volume storage — check your tenancy limits.
-
-**For more error-specific help see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).**
-
-## Credits and References
-- [hitrov](https://github.com/hitrov)/[oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity): [Resolving Oracle Cloud Out of Capacity Issue and Getting Free VPS with 4 ARM Cores, 24GB of RAM](https://hitrov.medium.com/resolving-oracle-cloud-out-of-capacity-issue-and-getting-free-vps-with-4-arm-cores-24gb-of-6ecd5ede6fcc) — 同类 PHP 实现,PAYG 建议与排障经验来源
-- [xitroff](https://www.reddit.com/user/xitroff/): [Resolving Oracle Cloud Out of Capacity Issue and Getting Free VPS with 4 ARM Cores, 24GB of RAM](https://hitrov.medium.com/resolving-oracle-cloud-out-of-capacity-issue-and-getting-free-vps-with-4-arm-cores-24gb-of-a3d7e6a027a8)
-- [Oracle Launch Instance Docs](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/Instance/LaunchInstance)
-- [LaunchInstanceDetails](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/datatypes/LaunchInstanceDetails)
+- [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) —— 同类 PHP 实现与本项目的 PAYG 经验来源
+- [Oracle LaunchInstance API](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/Instance/LaunchInstance) / [LaunchInstanceDetails](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/datatypes/LaunchInstanceDetails)
 - [Oracle 公共云区域列表](https://www.oracle.com/cloud/public-cloud-regions/) / [Oracle Cloud Free Tier FAQ](https://www.oracle.com/cloud/free/faq/)
+- 上游原项目 [mohankumarpaluru/oracle-freetier-instance-creation](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation)
