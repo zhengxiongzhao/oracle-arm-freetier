@@ -1,0 +1,34 @@
+services:
+  oracle-freetier:
+    build: .
+    image: oracle-freetier:latest
+    container_name: oracle-freetier
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      # 日志输出标准输出时必须关闭 Python stdout 缓冲,否则 docker logs 看不到实时内容
+      - PYTHONUNBUFFERED=1
+      # 日志输出目标: stdout(默认)/file/both,详见 main.py LOG_TO
+      - LOG_TO=${LOG_TO:-stdout}
+    working_dir: /workspace/oracle-freetier-instance-creation
+    volumes:
+      # 项目目录原路径挂载:oci.env/oci_config 的绝对路径无需改动,
+      # 日志与 INSTANCE_CREATED 直接落在宿主项目目录
+      # ⚠️ bind mount 源是宿主机路径:本环境 /workspace 在宿主侧
+      #    对应 /usr/local/deploy/hermes/workspace-data
+      - /usr/local/deploy/hermes/workspace-data/oracle-freetier-instance-creation:/workspace/oracle-freetier-instance-creation
+      - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
+    networks:
+      # 加入 gateway-net:使容器可访问 clawbot-gateway(微信通知网关)
+      - gateway-net
+      - default
+
+networks:
+  gateway-net:
+    external: true
+
+# 说明:
+# - 后台轮询服务,无 HTTP 端口,不对外接网关路由(仅加入 gateway-net 以便访问通知网关)
+# - 抢到实例后脚本退出并写 INSTANCE_CREATED,各通知渠道(TG/微信)会收到通知;
+#   之后请手动 docker compose stop,避免无意义重启重试
