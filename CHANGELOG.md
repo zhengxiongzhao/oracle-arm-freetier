@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [v1.4.0] - 2026-09-16
+
+### Added
+- README 配置章节新增图文操作指引（复制自 hitrov/oci-arm-host-capacity 并精简）：API 密钥生成 4 步截图（User Settings→Add API Key→Download Private Key→config 预览）、控制台 Create Instance 抓取 subnetId/imageId/availabilityDomain 的开发者工具法、SSH 公钥说明；8 张指引截图下载至 `images/` 随仓库分发
+
+### Changed
+- 移除配置项"来源参考"引注说明，改为直接内嵌指引内容
+
+---
+
 ## [v1.3.9] - 2026-09-16
 
 ### Changed

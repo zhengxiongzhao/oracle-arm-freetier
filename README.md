@@ -102,8 +102,6 @@ docker logs -f oracle-freetier   # 实时查看抢实例日志
 
 ## 配置项（oci.env）
 
-> 配置字段的设计与取值来源参考 [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) 的 `.env` 配置方案；各字段（AD / 子网 / 镜像等）在 OCI 控制台的获取位置可对照其 [Configuration 说明](https://github.com/hitrov/oci-arm-host-capacity#configuration)填写。
-
 **必填：**
 
 | 变量 | 说明 |
@@ -130,6 +128,52 @@ docker logs -f oracle-freetier   # 实时查看抢实例日志
 | `DISCORD_WEBHOOK` | — | Discord webhook 通知 URL |
 | `TELEGRAM_TOKEN` / `TELEGRAM_USER_ID` | — | Telegram 通知 |
 | `WECHAT_*`（见下文） | — | 微信 ClawBot 通知 |
+
+### 生成 API 密钥（获取 oci_config 与私钥）
+
+登录 [OCI 控制台](https://cloud.oracle.com)，点击右上角头像 → **User Settings**：
+
+![User Settings](images/user-settings.png)
+
+左侧 **API keys** → **Add API Key**：
+
+![Add API Key](images/add-api-key.png)
+
+选 **Generate API Key Pair**，点击 **Download Private Key** 保存 `.pem` 私钥文件，再点 **Add**：
+
+![Download Private Key](images/download-private-key.png)
+
+把弹出框中的配置内容复制保存为 `oci_config`（与 `.pem` 私钥放同一目录），并把其中 `key_file` 改为私钥的**绝对路径**：
+
+![Config File Preview](images/config-file-preview.png)
+
+### 从控制台抓取 Subnet / Image / 可用域
+
+1. 在控制台菜单进入 **Compute → Instances → Create Instance**，选择镜像与形态。AMD 实例需确认可用域带 "Always Free Eligible" 标签（ARM 在主区域内任意 AD 均可）：
+
+    ![Create Compute Instance](images/create-compute-instance.png)
+
+2. 调整 Networking 部分，勾选 **Do not assign a public IPv4 address**。若无现成 VNIC/子网，可先创建一台 `VM.Standard.E2.1.Micro` 微型实例来生成：
+
+    ![Networking](images/networking.png)
+
+3. "Add SSH keys" 部分可跳过（本脚本会自动处理密钥）。**点击 Create 前先打开浏览器开发者工具 → Network 标签**：
+
+    ![Dev Tools](images/dev-tools.png)
+
+4. 点击 **Create**（大概率报 "Out of capacity" 错误），在 Network 列表中找到红色的 `/instances` 请求 → 右键 **Copy as cURL**，粘贴到文本编辑器：
+   - 从 `data-binary` 参数中找到 `subnetId`、`imageId`、`availabilityDomain` 的值，分别填入 `OCI_SUBNET_ID`、`OCI_IMAGE_ID`、`OCT_FREE_AD`
+
+### SSH 公钥
+
+`SSH_AUTHORIZED_KEYS_FILE` 指向你的公钥文件（如 `~/.ssh/id_rsa.pub`）：
+
+```bash
+cat ~/.ssh/id_rsa.pub
+# ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwZVQa+F41Jrb4X+p9gFMrrcAqh9ks8ATrcGRitK+R/ user@host
+```
+
+文件不存在时脚本会自动生成密钥对；填了路径则直接使用该文件。
 
 ## 通知渠道
 
@@ -196,7 +240,7 @@ Docker：`docker compose stop`。裸进程：`setup_init.sh` 启动时显示的 
 
 ## 参考与致谢
 
-- [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) —— 本项目配置项设计参考来源
+- [hitrov/oci-arm-host-capacity](https://github.com/hitrov/oci-arm-host-capacity) —— 配置与图文指引来源
 - [Oracle LaunchInstance API](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/Instance/LaunchInstance) / [LaunchInstanceDetails](https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/datatypes/LaunchInstanceDetails)
 - [Oracle 公共云区域列表](https://www.oracle.com/cloud/public-cloud-regions/) / [Oracle Cloud Free Tier FAQ](https://www.oracle.com/cloud/free/faq/)
 - 上游原项目 [mohankumarpaluru/oracle-freetier-instance-creation](https://github.com/mohankumarpaluru/oracle-freetier-instance-creation)
